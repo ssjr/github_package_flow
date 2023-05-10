@@ -38,4 +38,4 @@ jobs:
         if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
         run: |
           bundle install
-          bundle exec rake release --source=github
+          bundle exec rake release
