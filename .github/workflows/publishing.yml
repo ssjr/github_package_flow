@@ -34,14 +34,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: List diff
-        if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
-        run: |
-          bundle install
-          echo `git diff`
-          git restore Gemfile.lock
-          echo `git diff`
       - name: Publish to GitHub Packages
         if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
         run: |
+          bundle install
+          git restore Gemfile.lock
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
           rake release
