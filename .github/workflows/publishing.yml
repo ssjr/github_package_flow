@@ -35,7 +35,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: List diff
-        run: echo `git diff`
+        run: |
+          bundle install
+          echo `git diff`
+          rm Gemfile.lock
+          echo `git diff`
       - name: Publish to GitHub Packages
         if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
         run: |
