@@ -37,6 +37,5 @@ jobs:
       - name: Publish to GitHub Packages
         if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
         run: |
-          bundle install
           rm Gemfile.lock
-          bundle exec rake release
+          rake release
