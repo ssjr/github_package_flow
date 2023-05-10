@@ -1,0 +1,38 @@
+name: Publish Gem
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check version difference
+        id: check_file_changed
+        env:
+          GIT_HEAD_REF: ${{ github.sha }}
+        run: |
+          echo "VERSION_DIFF_COUNT=$(grep --count "lib/github_package_flow/version.rb" <<< "`git diff --name-only $GIT_HEAD_REF`")" >> $GITHUB_OUTPUT
+
+      - name: Set up Ruby
+        if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2.2'
+          bundler-cache: true
+
+      - name: Set Credentials
+        if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
+        run: |
+          mkdir -p $HOME/.gem
+          touch $HOME/.gem/credentials
+          chmod 0600 $HOME/.gem/credentials
+          printf -- "---\n:github: Bearer ${GITHUB_TOKEN}\n" > $HOME/.gem/credentials
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to GitHub Packages
+        if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
+        run: bundle exec rake release --source=github
