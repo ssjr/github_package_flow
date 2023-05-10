@@ -9,17 +9,14 @@ permissions:
   packages: write
 
 jobs:
-  build:
+  publish_gem:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 2
-
-      - name: Check version difference
+      - name: Check for version difference
         id: check_file_changed
-        env:
-          GIT_HEAD_REF: ${{ github.sha }}
         run: |
           echo "VERSION_DIFF_COUNT=$(grep --count "lib/github_package_flow/version.rb" <<< "`git diff --name-only HEAD^ HEAD`")" >> $GITHUB_OUTPUT
 
@@ -29,6 +26,12 @@ jobs:
         with:
           ruby-version: '3.2.2'
 
+      - name: Install dependencies
+        if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
+        run: |
+          bundle install --jobs 4
+          git restore Gemfile.lock
+
       - name: Set Credentials
         if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
         run: |
@@ -36,15 +39,12 @@ jobs:
           touch $HOME/.gem/credentials
           chmod 0600 $HOME/.gem/credentials
           printf -- "---\n:github: Bearer ${GITHUB_TOKEN}\n" > $HOME/.gem/credentials
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
+          bundle config set --global gem.push_key github
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to GitHub Packages
         if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
-        run: |
-          bundle install
-          git restore Gemfile.lock
-          git config user.name "GitHub Actions Bot"
-          git config user.email "<>"
-          bundle config set --global gem.push_key github
-          rake release
+        run: rake release
