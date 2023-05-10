@@ -39,7 +39,7 @@ jobs:
         run: |
           bundle install
           echo `git diff`
-          rm Gemfile.lock
+          git restore Gemfile.lock
           echo `git diff`
       - name: Publish to GitHub Packages
         if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
