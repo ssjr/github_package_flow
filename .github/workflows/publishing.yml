@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -36,6 +37,8 @@ jobs:
 
       - name: Publish to GitHub Packages
         if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
+        permissions:
+          contents: write
         run: |
           bundle install
           git restore Gemfile.lock
