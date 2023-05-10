@@ -14,7 +14,7 @@ jobs:
         env:
           GIT_HEAD_REF: ${{ github.sha }}
         run: |
-          echo "VERSION_DIFF_COUNT=$(grep --count "lib/github_package_flow/version.rb" <<< "`git diff --name-only $GIT_HEAD_REF^ $GIT_HEAD_REF`")" >> $GITHUB_OUTPUT
+          echo "VERSION_DIFF_COUNT=$(grep --count "lib/github_package_flow/version.rb" <<< "`git diff --name-only origin/main^ origin/main`")" >> $GITHUB_OUTPUT
 
       - name: Set up Ruby
         if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
