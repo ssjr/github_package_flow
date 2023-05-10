@@ -34,6 +34,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: List diff
+        run: git diff
       - name: Publish to GitHub Packages
         if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
         run: |
