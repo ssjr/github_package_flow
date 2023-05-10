@@ -35,6 +35,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: List diff
+        if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
         run: |
           bundle install
           echo `git diff`
@@ -43,5 +44,4 @@ jobs:
       - name: Publish to GitHub Packages
         if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
         run: |
-          rm Gemfile.lock
           rake release
