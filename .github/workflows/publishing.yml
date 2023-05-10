@@ -45,4 +45,5 @@ jobs:
           git restore Gemfile.lock
           git config user.name "GitHub Actions Bot"
           git config user.email "<>"
+          bundle config set --global gem.push_key github
           rake release
