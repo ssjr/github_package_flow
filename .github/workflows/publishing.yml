@@ -36,4 +36,6 @@ jobs:
 
       - name: Publish to GitHub Packages
         if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
-        run: bundle exec rake release --source=github
+        run: |
+          bundle install
+          bundle exec rake release --source=github
