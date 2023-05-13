@@ -14,11 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 2
+          fetch-depth: 0
+
       - name: Check for version difference
         id: check_file_changed
         run: |
-          echo "VERSION_DIFF_COUNT=$(grep --count "lib/github_package_flow/version.rb" <<< "`git diff --name-only HEAD^ HEAD`")" >> $GITHUB_OUTPUT
+          echo "VERSION_DIFF_COUNT=$(grep --count "lib/github_package_flow/version.rb" <<< "`git diff --name-only ${{ github.event.base_ref }} ${{ github.event.after }}`")" >> $GITHUB_OUTPUT
 
       - name: Set up Ruby
         if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
