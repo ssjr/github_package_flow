@@ -38,13 +38,34 @@ jobs:
           mkdir -p $HOME/.gem
           touch $HOME/.gem/credentials
           chmod 0600 $HOME/.gem/credentials
-          printf -- "---\n:github: Bearer ${GITHUB_TOKEN}\n" > $HOME/.gem/credentials
+          printf -- "---\n:github: Bearer ${{ secrets.GITHUB_TOKEN }}\n" > $HOME/.gem/credentials
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           bundle config set --global gem.push_key github
+
+      - name: rake install and get gem version
+        if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
+        id: gem_version
+        run: |
+          rake install
+          export GEM_VERSION=$(ruby -e "require 'github_package_flow/version'; puts GithubPackageFlow::VERSION")
+          echo "GEM_VERSION=${GEM_VERSION}" >> $GITHUB_OUTPUT
+          echo "IS_PRE_RELEASE=$(grep '[^0-9\.]' <<< ${GEM_VERSION} --count)" >> $GITHUB_OUTPUT
+
+      - name: github release
+        if: ${{ steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1' && steps.gem_version.outputs.IS_PRE_RELEASE == '0' }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create v${{ steps.gem_version.outputs.GEM_VERSION }} --target main --notes-file CHANGELOG.md
+
+      - name: github pre release
+        if: ${{ steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1' && steps.gem_version.outputs.IS_PRE_RELEASE == '1' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create v${{ steps.gem_version.outputs.GEM_VERSION }} --target main --notes-file CHANGELOG.md --prerelease
 
       - name: Publish to GitHub Packages
         if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
-        run: rake release
+        run: rake release:rubygem_push
