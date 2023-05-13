@@ -1,0 +1,38 @@
+name: push tag
+on:
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  publish_gem:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2.2'
+
+      - name: Install dependencies
+        run: |
+          bundle install --jobs 4
+
+      - name: debug
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rake install
+          export GEM_VERSION=$(ruby -e "require 'github_package_flow/version'; puts GithubPackageFlow::VERSION")
+          export RELEASE_OPTION=$([[ grep "[^0-9\.]" <<< ${GEM_VERSION} ]] && "--latest" || "--prerelease")
+          gh release create v${GEM_VERSION} --target main --notes-file CHANGELOG.md ${RELEASE_OPTION}
+          mkdir -p $HOME/.gem
+          touch $HOME/.gem/credentials
+          chmod 0600 $HOME/.gem/credentials
+          printf -- "---\n:github: Bearer ${GITHUB_TOKEN}\n" > $HOME/.gem/credentials
+          bundle config set --global gem.push_key github
+          rake release:rubygem_push
