@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   publish_gem:
-    if: contains( github.event.commits.added, lib/github_package_flow/version.rb )
+    if: contains( github.event.commits.added, "lib/github_package_flow/version.rb )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
