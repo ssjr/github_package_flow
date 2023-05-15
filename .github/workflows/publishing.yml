@@ -10,31 +10,24 @@ permissions:
 
 jobs:
   publish_gem:
+    if: contains( github.event.commits.added, lib/github_package_flow/version.rb )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Check for version difference
-        id: check_file_changed
-        run: |
-          echo "VERSION_DIFF_COUNT=$(grep --count "lib/github_package_flow/version.rb" <<< "`git diff --name-only ${{ github.event.base_ref }} ${{ github.event.after }}`")" >> $GITHUB_OUTPUT
-
       - name: Set up Ruby
-        if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2.2'
 
       - name: Install dependencies
-        if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
         run: |
           bundle install --jobs 4
           git restore Gemfile.lock
 
       - name: Set Credentials
-        if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
         run: |
           mkdir -p $HOME/.gem
           touch $HOME/.gem/credentials
@@ -45,7 +38,6 @@ jobs:
           bundle config set --global gem.push_key github
 
       - name: rake install and get gem version
-        if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
         id: gem_version
         run: |
           rake install
@@ -54,19 +46,18 @@ jobs:
           echo "IS_PRE_RELEASE=$(grep '[^0-9\.]' <<< ${GEM_VERSION} --count)" >> $GITHUB_OUTPUT
 
       - name: github release
-        if: ${{ steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1' && steps.gem_version.outputs.IS_PRE_RELEASE == '0' }}
+        if: steps.gem_version.outputs.IS_PRE_RELEASE == '0'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create v${{ steps.gem_version.outputs.GEM_VERSION }} --target main --notes-file CHANGELOG.md
 
       - name: github pre release
-        if: ${{ steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1' && steps.gem_version.outputs.IS_PRE_RELEASE == '1' }}
+        if: steps.gem_version.outputs.IS_PRE_RELEASE == '1'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create v${{ steps.gem_version.outputs.GEM_VERSION }} --target main --notes-file CHANGELOG.md --prerelease
 
       - name: Publish to GitHub Packages
-        if: steps.check_file_changed.outputs.VERSION_DIFF_COUNT == '1'
         run: rake release:rubygem_push
